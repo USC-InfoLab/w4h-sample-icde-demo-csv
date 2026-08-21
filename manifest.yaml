@@ -1,0 +1,258 @@
+vendor: icde-demo
+format: csv
+version: "1.0.0"
+title: ICDE demo CSV sample package
+description: >
+  Synthetic multi-signal + GPS CSV export, trimmed from the w4h-icde-demo
+  (ICDE 2024 demo) prototype's synthetic dataset. Unlike the Fitbit sample
+  (no GPS in real Fitbit exports), this package carries a raw geo signal
+  (gps_track) so importer and GeoMTS tooling can be exercised against the
+  geo branch of the mapping, not just the non-geo one (ADR-008).
+importer_repo: https://github.com/USC-InfoLab/w4h-sample-icde-demo-csv-importer
+
+# Trimmed from the source dataset (17 subjects x ~2 months at 5-minute
+# resolution) to 3 subjects x 3 days so a full import stays fast enough to
+# run live against a dev API. Same subjects/timestamps across every signal
+# file, including gps_track, so cross-signal (subject, time) joins work.
+references:
+  - title: w4h-icde-demo (prototype behind the ICDE 2024 demo paper)
+    url: https://github.com/USC-InfoLab/w4h-icde-demo
+    note: >
+      Source of synthetic_timeseries_data.csv. That prototype stored geo as
+      a separate PostGIS `locations` table joined by (user_id, timestamp) —
+      see ADR-008's "Precedent" section. This sample mirrors that split as
+      a dedicated gps_track signal rather than lat/lon columns on every row.
+
+signals:
+  - slug: subjects
+    file: data/icde_demo_subjects.csv
+    description: Subject id and observed window within this trimmed sample.
+    columns:
+      - name: id
+        type: text
+        description: Subject identifier (synthetic).
+      - name: start_date
+        type: date
+        description: First date present for this subject in this sample.
+      - name: end_date
+        type: date
+        description: Last date present for this subject in this sample.
+    geomts_mapping:
+      signal_type: subjects
+      subject: id
+      time: null
+      values: []
+
+  - slug: heart_rate
+    file: data/icde_demo_heart_rate.csv
+    description: Simulated heart rate, 5-minute resolution.
+    sampling_interval: 5min
+    columns:
+      - name: id
+        type: text
+        description: Subject identifier.
+      - name: date
+        type: date
+        description: Date of measurement.
+      - name: timestamp
+        type: text
+        description: Time of measurement.
+      - name: value
+        type: double precision
+        description: Heart rate in beats per minute.
+        unit: bpm
+    geomts_mapping:
+      signal_type: heart_rate
+      subject: id
+      time:
+        combine: [date, timestamp]
+      geo: null
+      values:
+        - source: value
+          name: heart_rate_bpm
+          type: double precision
+          description: Heart rate in beats per minute
+
+  - slug: calories
+    file: data/icde_demo_calories.csv
+    description: Simulated calories burned, 5-minute resolution.
+    sampling_interval: 5min
+    columns:
+      - name: id
+        type: text
+        description: Subject identifier.
+      - name: date
+        type: date
+        description: Date of measurement.
+      - name: timestamp
+        type: text
+        description: Time of measurement.
+      - name: value
+        type: double precision
+        description: Calories burned.
+        unit: kcal
+    geomts_mapping:
+      signal_type: calories
+      subject: id
+      time:
+        combine: [date, timestamp]
+      geo: null
+      values:
+        - source: value
+          name: calories
+          type: double precision
+          description: Calories burned
+
+  - slug: distances
+    file: data/icde_demo_distances.csv
+    description: Simulated distance traveled, 5-minute resolution.
+    sampling_interval: 5min
+    columns:
+      - name: id
+        type: text
+        description: Subject identifier.
+      - name: date
+        type: date
+        description: Date of measurement.
+      - name: timestamp
+        type: text
+        description: Time of measurement.
+      - name: value
+        type: double precision
+        description: Distance traveled since previous sample.
+        unit: km
+    geomts_mapping:
+      signal_type: distances
+      subject: id
+      time:
+        combine: [date, timestamp]
+      geo: null
+      values:
+        - source: value
+          name: distance_km
+          type: double precision
+          description: Distance traveled since previous sample
+
+  - slug: steps
+    file: data/icde_demo_steps.csv
+    description: Simulated step count, 5-minute resolution.
+    sampling_interval: 5min
+    columns:
+      - name: id
+        type: text
+        description: Subject identifier.
+      - name: date
+        type: date
+        description: Date of measurement.
+      - name: timestamp
+        type: text
+        description: Time of measurement.
+      - name: value
+        type: double precision
+        description: Steps taken since previous sample.
+    geomts_mapping:
+      signal_type: steps
+      subject: id
+      time:
+        combine: [date, timestamp]
+      geo: null
+      values:
+        - source: value
+          name: steps
+          type: double precision
+          description: Steps taken since previous sample
+
+  - slug: sleep
+    file: data/icde_demo_sleep.csv
+    description: Simulated sleep indicator, 5-minute resolution.
+    sampling_interval: 5min
+    columns:
+      - name: id
+        type: text
+        description: Subject identifier.
+      - name: date
+        type: date
+        description: Date of measurement.
+      - name: timestamp
+        type: text
+        description: Time of measurement.
+      - name: value
+        type: double precision
+        description: Sleep signal value for this sample window (synthetic; not a Fitbit sleep stage code).
+    geomts_mapping:
+      signal_type: sleep
+      subject: id
+      time:
+        combine: [date, timestamp]
+      geo: null
+      values:
+        - source: value
+          name: sleep_value
+          type: double precision
+          description: Sleep signal value for this sample window
+
+  - slug: weight
+    file: data/icde_demo_weight.csv
+    description: >
+      Simulated body weight, 5-minute resolution. Unlike Fitbit's periodic
+      weight log, this source models weight as a continuous stream — treat
+      it as a synthetic demo signal, not a realistic weigh-in cadence.
+    sampling_interval: 5min
+    columns:
+      - name: id
+        type: text
+        description: Subject identifier.
+      - name: date
+        type: date
+        description: Date of measurement.
+      - name: timestamp
+        type: text
+        description: Time of measurement.
+      - name: value
+        type: double precision
+        description: Simulated weight.
+        unit: kg
+    geomts_mapping:
+      signal_type: weight
+      subject: id
+      time:
+        combine: [date, timestamp]
+      geo: null
+      values:
+        - source: value
+          name: weight_kg
+          type: double precision
+          description: Simulated weight
+
+  - slug: gps_track
+    file: data/icde_demo_gps_track.csv
+    description: >
+      Raw GPS trace, 5-minute resolution — the geo signal this package
+      exists to exercise (see ADR-008). Other signals join to this one by
+      (subject, time); it is not merged as columns onto their rows.
+    sampling_interval: 5min
+    columns:
+      - name: id
+        type: text
+        description: Subject identifier.
+      - name: date
+        type: date
+        description: Date of measurement.
+      - name: timestamp
+        type: text
+        description: Time of measurement.
+      - name: latitude
+        type: double precision
+        description: Latitude, decimal degrees (WGS84).
+      - name: longitude
+        type: double precision
+        description: Longitude, decimal degrees (WGS84).
+    geomts_mapping:
+      signal_type: gps_track
+      subject: id
+      time:
+        combine: [date, timestamp]
+      geo:
+        lat: latitude
+        lon: longitude
+      values: []
